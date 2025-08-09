@@ -1,0 +1,19 @@
+{
+    "dataset_path": "..\\data\\processed\\pirvision_combined.csv",
+    "shape": [
+        7651,
+        62
+    ],
+    "num_pir_sensors": 55,
+    "target_column": "Label",
+    "features": {
+        "pir": 55,
+        "temporal": 2,
+        "environmental": 1
+    },
+    "class_distribution": {
+        "0": 6247,
+        "1": 833,
+        "3": 571
+    }
+}

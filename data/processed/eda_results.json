@@ -1,0 +1,9 @@
+{
+    "dataset_shape": "(7651, 62)",
+    "target_distribution": "{0: 6247, 1: 833, 3: 571}",
+    "num_pir_sensors": "55",
+    "temperature_range": "[0, 89]",
+    "top_important_features": "['PIR_48', 'Temperature_F', 'PIR_4', 'PIR_40', 'PIR_47', 'PIR_49', 'PIR_50', 'PIR_46', 'PIR_41', 'PIR_39']",
+    "high_corr_pairs": "49",
+    "data_quality": "{'missing_values': 0, 'duplicate_rows': 0}"
+}

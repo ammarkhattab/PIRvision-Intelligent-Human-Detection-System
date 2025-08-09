@@ -1,0 +1,181 @@
+import pandas as pd
+import numpy as np
+from scipy import signal, stats
+from pathlib import Path
+import warnings
+warnings.filterwarnings('ignore')
+
+class PIRFeatureEngineer:
+    """Advanced feature engineering for PIR sensor data"""
+    
+    def __init__(self):
+        self.window_sizes = [3, 5, 10]
+        
+    def create_statistical_features(self, df, pir_cols):
+        """Create statistical features across PIR sensors"""
+        print("Creating statistical features...")
+        
+        # Cross-sensor statistics
+        df['pir_mean'] = df[pir_cols].mean(axis=1)
+        df['pir_std'] = df[pir_cols].std(axis=1)
+        df['pir_max'] = df[pir_cols].max(axis=1)
+        df['pir_min'] = df[pir_cols].min(axis=1)
+        df['pir_range'] = df['pir_max'] - df['pir_min']
+        df['pir_skew'] = df[pir_cols].skew(axis=1)
+        df['pir_kurtosis'] = df[pir_cols].kurtosis(axis=1)
+        
+        # Percentiles
+        df['pir_25percentile'] = df[pir_cols].quantile(0.25, axis=1)
+        df['pir_75percentile'] = df[pir_cols].quantile(0.75, axis=1)
+        df['pir_iqr'] = df['pir_75percentile'] - df['pir_25percentile']
+        
+        return df
+    
+    def create_temporal_features(self, df, pir_cols):
+        """Create time-based features"""
+        print("Creating temporal features...")
+        
+        # Rolling window features for each PIR sensor
+        for window in self.window_sizes:
+            # Average PIR readings
+            df[f'pir_mean_roll_{window}'] = df[pir_cols].mean(axis=1).rolling(window).mean()
+            df[f'pir_std_roll_{window}'] = df[pir_cols].mean(axis=1).rolling(window).std()
+            
+        # Lag features
+        for lag in [1, 2, 5]:
+            df[f'pir_mean_lag_{lag}'] = df['pir_mean'].shift(lag)
+            
+        # Rate of change
+        df['pir_mean_diff'] = df['pir_mean'].diff()
+        df['pir_mean_diff_abs'] = df['pir_mean_diff'].abs()
+        
+        return df
+    
+    def create_frequency_features(self, df, pir_cols):
+        """Create frequency domain features using FFT"""
+        print("Creating frequency features...")
+        
+        # FFT for finding dominant frequencies
+        pir_matrix = df[pir_cols].values
+        
+        # Apply FFT row-wise (for each time sample across sensors)
+        fft_features = []
+        for row in pir_matrix:
+            fft_vals = np.fft.fft(row)
+            fft_features.append([
+                np.mean(np.abs(fft_vals)),  # Mean magnitude
+                np.max(np.abs(fft_vals)),   # Max magnitude
+                np.std(np.abs(fft_vals))    # Std of magnitude
+            ])
+        
+        fft_df = pd.DataFrame(fft_features, columns=['fft_mean_mag', 'fft_max_mag', 'fft_std_mag'])
+        df = pd.concat([df, fft_df], axis=1)
+        
+        return df
+    
+    def create_activation_features(self, df, pir_cols):
+        """Create features based on sensor activation patterns"""
+        print("Creating activation features...")
+        
+        # Threshold for activation (based on mean + std)
+        threshold = df[pir_cols].mean().mean() + df[pir_cols].std().mean()
+        
+        # Count activated sensors
+        df['sensors_activated'] = (df[pir_cols] > threshold).sum(axis=1)
+        df['activation_ratio'] = df['sensors_activated'] / len(pir_cols)
+        
+        # Activation patterns
+        for i in range(0, min(5, len(pir_cols))):
+            df[f'pir_{i+1}_activated'] = (df[pir_cols[i]] > threshold).astype(int)
+        
+        return df
+    
+    def create_zone_features(self, df, pir_cols):
+        """Group PIR sensors into zones and create zone-based features"""
+        print("Creating zone features...")
+        
+        # Divide sensors into zones (assuming spatial arrangement)
+        n_zones = 4
+        sensors_per_zone = len(pir_cols) // n_zones
+        
+        for zone in range(n_zones):
+            start_idx = zone * sensors_per_zone
+            end_idx = start_idx + sensors_per_zone
+            if zone == n_zones - 1:  # Last zone gets remaining sensors
+                zone_sensors = pir_cols[start_idx:]
+            else:
+                zone_sensors = pir_cols[start_idx:end_idx]
+            
+            df[f'zone_{zone+1}_mean'] = df[zone_sensors].mean(axis=1)
+            df[f'zone_{zone+1}_max'] = df[zone_sensors].max(axis=1)
+            df[f'zone_{zone+1}_std'] = df[zone_sensors].std(axis=1)
+        
+        # Zone differences (to detect movement between zones)
+        for i in range(n_zones-1):
+            df[f'zone_diff_{i+1}_{i+2}'] = df[f'zone_{i+1}_mean'] - df[f'zone_{i+2}_mean']
+        
+        return df
+    
+    def create_all_features(self, df):
+        """Create all engineered features"""
+        
+        # Identify PIR columns
+        pir_cols = [col for col in df.columns if 'PIR' in col]
+        
+        print(f"Engineering features for {len(pir_cols)} PIR sensors...")
+        
+        # Apply all feature engineering methods
+        df = self.create_statistical_features(df, pir_cols)
+        df = self.create_temporal_features(df, pir_cols)
+        df = self.create_frequency_features(df, pir_cols)
+        df = self.create_activation_features(df, pir_cols)
+        df = self.create_zone_features(df, pir_cols)
+        
+        # Fill NaN values created by rolling/lag operations
+        df = df.fillna(method='bfill').fillna(method='ffill')
+        
+        # Add datetime features
+        df['DateTime'] = pd.to_datetime(df['Date'] + ' ' + df['Time'])
+        df['Hour'] = df['DateTime'].dt.hour
+        df['Minute'] = df['DateTime'].dt.minute
+        df['Second'] = df['DateTime'].dt.second
+        df['DayOfWeek'] = df['DateTime'].dt.dayofweek
+        df['IsWeekend'] = (df['DayOfWeek'] >= 5).astype(int)
+        
+        print(f"✅ Feature engineering complete! Total features: {len(df.columns)}")
+        
+        return df
+
+def main():
+    # Load data
+    df = pd.read_csv('data/processed/pirvision_combined.csv')
+    print(f"Loaded dataset: {df.shape}")
+    
+    # Initialize feature engineer
+    engineer = PIRFeatureEngineer()
+    
+    # Create features
+    df_engineered = engineer.create_all_features(df)
+    
+    # Save engineered dataset
+    output_path = 'data/processed/pirvision_engineered.csv'
+    df_engineered.to_csv(output_path, index=False)
+    
+    print(f"\n💾 Saved engineered dataset to: {output_path}")
+    print(f"Original features: {59}")
+    print(f"Engineered features: {len(df_engineered.columns)}")
+    
+    # List new features
+    original_cols = set(df.columns)
+    new_cols = set(df_engineered.columns) - original_cols
+    print(f"\nNew features created: {len(new_cols)}")
+    
+    # Sample of new features
+    print("\nSample of new features:")
+    for feat in list(new_cols)[:20]:
+        print(f"  • {feat}")
+    
+    return df_engineered
+
+if __name__ == "__main__":
+    df_engineered = main()
