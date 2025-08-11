@@ -251,7 +251,7 @@ If you use PIRvision in your research, please cite:
 
 ## 📞 Contact
 
-**Ammar Tarek Khattab** - Student ID: 202002123  
+**Ammar Tarek Khattab**  
 📧 [Contact via GitHub Issues](https://github.com/your-username/PIRvision/issues)
 
 ---
