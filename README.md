@@ -243,10 +243,6 @@ If you use PIRvision in your research, please cite:
 }
 ```
 
-## 📝 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
 ## 🙏 Acknowledgments
 
 - UCI Machine Learning Repository for the PIRvision_FoG dataset
