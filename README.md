@@ -24,21 +24,23 @@ PIRvision addresses the critical need for accurate, privacy-preserving occupancy
 ```
 ┌─────────────────┐
 │   PIR Sensors   │
-│  (55 sensors)   │ ──┐
-└─────────────────┘   │    ┌────────────────────┐    ┌─────────────────┐
-                      ├───▶│  Feature Engine    │──▶│ ML Classifier   │
-┌─────────────────┐   │    │                    │    │   (Ensemble)    │
-│ Environmental   │ ──┘    │ • Statistical      │    └─────────────────┘
-│ (Temperature)   │        │ • Temporal         │             │
-└─────────────────┘        │ • Frequency (FFT)  │             │
-                           │ • PCA Components   │             ▼
-                           │ • Entropy Features │    ┌─────────────────┐
-                           │ • Activation Maps  │    │ Occupancy State │
-                           └────────────────────┘    │                 │
-                                                     │ 0: Vacant       │
-                                                     │ 1: Stationary   │
-                                                     │ 3: Active       │
-                                                     └─────────────────┘
+│  (55 sensors)   │
+└─────────────────┘
+          │
+          ▼
+┌─────────────────┐       ┌─────────────────┐       ┌─────────────────┐
+│ Environmental   │  ──►  │  Feature Engine │  ──►  │ ML Classifier   │
+│ (Temperature)   │       │                 │       │   (Ensemble)    │
+└─────────────────┘       │ • Statistical   │       └─────────────────┘
+                          │ • Temporal      │                │
+                          │ • Frequency     │                ▼
+                          │ • PCA           │       ┌─────────────────┐
+                          │ • Entropy       │       │ Occupancy State │
+                          │ • Activation    │       │                 │
+                          └─────────────────┘       │ 0: Vacant       │
+                                                    │ 1: Stationary   │
+                                                    │ 3: Active       │
+                                                    └─────────────────┘
 
 Data Flow: Sensors → Feature Engineering → ML Model → Classification
 ```
