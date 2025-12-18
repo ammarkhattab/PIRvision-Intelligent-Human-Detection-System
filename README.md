@@ -1,7 +1,6 @@
 # PIRvision
 
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Accuracy](https://img.shields.io/badge/Accuracy-99.35%25-brightgreen.svg)]()
 
 **Accurate multiclass human presence detection using PIR sensor networks and advanced machine learning.**
